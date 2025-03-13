@@ -1,5 +1,5 @@
-# WingMan
-WingMan is an IDA Pro plugin designed to assist with
+# IDAWingMan
+IDAWingMan is an IDA Pro plugin designed to assist with
 disassembly and analysis tasks. 
 
 ## SettingJson.json

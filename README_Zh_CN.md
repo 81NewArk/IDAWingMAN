@@ -1,5 +1,5 @@
 # IDAWingMan
-IDAWingMan 是一个 IDA Pro 插件，旨在协助反汇编和分析任务。
+IDAWingMan 是一个 IDA Pro 插件，宗旨在于对接Ai协助反汇编和分析任务。
 
 ## SettingJson.json
 使用插件时，请确保**<Your_IDA_Path>\plugins**目录下的**SettingJson** 文件配置正确。

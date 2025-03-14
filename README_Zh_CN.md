@@ -4,6 +4,8 @@ IDAWingMan 是一个 IDA Pro 插件，宗旨在于对接Ai协助反汇编和分�
 ## SettingJson.json
 使用插件时，请确保 **<Your_IDA_Path>\plugins** 目录下的 **SettingJson** 文件配置正确。
 
+支持OpenAi对接OpenAi标准的大语言模型。
+
 ### 接入DeepSeek json:
 
 ```

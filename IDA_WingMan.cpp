@@ -203,6 +203,10 @@ string Send_Post(const string& url, const string& payload, const string& headers
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers_list);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);  // Disable SSL verification (for debugging only)
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);  // Disable SSL verification (for debugging only)
+        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);         // Enable verbose output
+
         res = curl_easy_perform(curl);
 
         if (res != CURLE_OK) {
@@ -306,7 +310,7 @@ struct plugin_ctx_t : public plugmod_t {
             msg("\nPrompt:\n------------------------------------------------------------------\n%s\n\n", prompt.c_str());
 
             string payload = Construct_Payload(prompt, settings);
-            msg("------------------------------------------------------------------\nPlease wait for Ai to think......");
+            msg("------------------------------------------------------------------\nPlease wait for Ai to think......\n------------------------------------------------------------------\n\n");
             thread request_thread(Process_Request, url, payload, headers);
             request_thread.detach();
         }

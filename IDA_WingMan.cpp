@@ -231,7 +231,7 @@ string Send_Post(const string& url, const string& payload, const string& headers
 void Process_Request(const string& url, const string& payload, const string& headers) {
     string response_json = Send_Post(url, payload, headers);
     lock_guard<mutex> guard(mtx);
-    msg("\n------------------------------------------------------------------\n\n\nWingMan  Response:\n------------------------------------------------------------------\n%s\n\n", Extract_Content(response_json).c_str());
+    msg("\n------------------------------------------------------------------\nWingMan  Response:\n------------------------------------------------------------------\n%s\n\n", Extract_Content(response_json).c_str());
 }
 
 struct plugin_ctx_t : public plugmod_t {

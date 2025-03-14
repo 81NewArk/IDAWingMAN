@@ -13,10 +13,22 @@
 #include <thread>
 #include <mutex>
 
+// Add Windows-specific headers and link directives
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <windows.h>
+#pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "crypt32.lib")
+#endif
+
 using namespace rapidjson;
 using namespace std;
 
 mutex mtx;
+
+// Global flag to track WSA initialization
+static bool g_wsaInitialized = false;
 
 Document Read_SettingJson() {
     char plugin_dir[QMAXPATH];
@@ -57,11 +69,10 @@ Document Read_SettingJson() {
 |           \_/\_/   |_||_| |_| \__, | |_|  |_| \__,_||_| |_|       |
 |                               |___/                               |
 |-------------------------------------------------------------------|
-|      Author                                                       |
+|      Author      :  81NewArk81                                    |
 |-------------------------------------------------------------------|
 |                                                                   |
-|      GitHub      :  https://github.com/81NewArk                   |
-|      Email       :  751247667@qq.com                              |
+|      GitHub      :  https://github.com/81NewArk/IDAWingMAN        |
 |                                                                   |
 |-------------------------------------------------------------------|
 |      Description                                                  |
@@ -175,7 +186,6 @@ string Send_Post(const string& url, const string& payload, const string& headers
     CURLcode res;
     string readBuffer;
 
-    curl_global_init(CURL_GLOBAL_DEFAULT);
     curl = curl_easy_init();
     if (curl) {
         struct curl_slist* headers_list = nullptr;
@@ -211,7 +221,6 @@ string Send_Post(const string& url, const string& payload, const string& headers
         msg("WingMan Error: Failed to initialize CURL.\n");
     }
 
-    curl_global_cleanup();
     return readBuffer;
 }
 
@@ -222,6 +231,34 @@ void Process_Request(const string& url, const string& payload, const string& hea
 }
 
 struct plugin_ctx_t : public plugmod_t {
+    plugin_ctx_t() {
+#ifdef _WIN32
+        // Initialize Winsock
+        if (!g_wsaInitialized) {
+            WSADATA wsaData;
+            if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+                msg("WingMan Error: WSAStartup failed\n");
+                return;
+            }
+            g_wsaInitialized = true;
+        }
+#endif
+        // Initialize CURL globally
+        curl_global_init(CURL_GLOBAL_DEFAULT);
+    }
+
+    ~plugin_ctx_t() {
+        // Cleanup CURL
+        curl_global_cleanup();
+#ifdef _WIN32
+        // Cleanup Winsock
+        if (g_wsaInitialized) {
+            WSACleanup();
+            g_wsaInitialized = false;
+        }
+#endif
+    }
+
     bool idaapi run(size_t) override {
         msg("WingMan Loading configuration...\n");
 
@@ -280,7 +317,6 @@ struct plugin_ctx_t : public plugmod_t {
         return true;
     }
 };
-
 
 plugin_t PLUGIN = {
     IDP_INTERFACE_VERSION,

@@ -36,14 +36,14 @@ Document Read_SettingJson() {
 
     linput_t* file = open_linput(plugin_dir, false);
     if (!file) {
-        msg("WingMan Error: Failed to open configuration file: %s\n", plugin_dir);
+        msg("[WingMan] Error: Failed to open configuration file: %s\n", plugin_dir);
         return Document();
     }
 
     qoff64_t fileSize = qlsize(file);
     if (fileSize == 0) {
         close_linput(file);
-        msg("WingMan Error: Configuration file is empty.\n");
+        msg("[WingMan] Error: Configuration file is empty.\n");
         return Document();
     }
 
@@ -55,11 +55,11 @@ Document Read_SettingJson() {
     Document document;
     ParseResult result = document.Parse(content.c_str());
     if (!result) {
-        msg("WingMan Error: Failed to parse JSON file. Error code: %u\n", result.Code());
+        msg("[WingMan] Error: Failed to parse JSON file. Error code: %u\n", result.Code());
         return Document();
     }
 
-    msg("WingMan Configuration file loaded successfully.\n");
+    msg("[WingMan] Configuration file loaded successfully.\n");
     msg(u8R"(
 ---------------------------------------------------------------------
 |        __        __ _                 __  __                      |
@@ -91,7 +91,7 @@ Document Read_SettingJson() {
 
 string Get_BaseURL(const Document& settings) {
     if (!settings.HasMember("Base_URL") || !settings["Base_URL"].IsString()) {
-        msg("WingMan Error: Missing or invalid 'Base_URL' in configuration\n");
+        msg("[WingMan] Error: Missing or invalid 'Base_URL' in configuration\n");
         return "";
     }
     return settings["Base_URL"].GetString();
@@ -99,7 +99,7 @@ string Get_BaseURL(const Document& settings) {
 
 string Get_Headers(const Document& settings) {
     if (!settings.HasMember("Headers") || !settings["Headers"].IsObject()) {
-        msg("WingMan Error: Missing or invalid 'Headers' in configuration\n");
+        msg("[WingMan] Error: Missing or invalid 'Headers' in configuration\n");
         return "";
     }
     StringBuffer buffer;
@@ -110,7 +110,7 @@ string Get_Headers(const Document& settings) {
 
 string Get_Payload(const Document& settings) {
     if (!settings.HasMember("Payload") || !settings["Payload"].IsObject()) {
-        msg("WingMan Error: Missing or invalid 'Payload' in configuration\n");
+        msg("[WingMan] Error: Missing or invalid 'Payload' in configuration\n");
         return "";
     }
     StringBuffer buffer;
@@ -144,7 +144,7 @@ string Construct_Payload(const string& message, const Document& settings) {
     document.Parse(payload.c_str());
 
     if (!document.HasMember("messages") || !document["messages"].IsArray()) {
-        msg("WingMan Error: 'messages' field not found in payload\n");
+        msg("[WingMan] Error: 'messages' field not found in payload\n");
         return "";
     }
 
@@ -161,17 +161,17 @@ string Extract_Content(const string& jsonContent) {
     Document document;
     ParseResult result = document.Parse(jsonContent.c_str());
     if (!result) {
-        msg("WingMan Error: Failed to parse response JSON. Error code: %u\n", result.Code());
+        msg("[WingMan] Error: Failed to parse response JSON. Error code: %u\n", result.Code());
         return "WingMan Error: Failed to parse response JSON.";
     }
     if (!document.HasMember("choices") || !document["choices"].IsArray() || document["choices"].Empty()) {
-        msg("WingMan Error: Invalid response format\n");
+        msg("[WingMan] Error: Invalid response format\n");
         return "WingMan Error: Invalid response format";
     }
     const Value& choices = document["choices"];
     if (!choices[0].HasMember("message") || !choices[0]["message"].HasMember("content")) {
-        msg("WingMan Error: Missing 'message' or 'content' field in response\n");
-        return "WingMan Error: Missing 'message' or 'content' field in response";
+        msg("[WingMan] Error: Missing 'message' or 'content' field in response\n");
+        return "[WingMan] Error: Missing 'message' or 'content' field in response";
     }
     return choices[0]["message"]["content"].GetString();
 }
@@ -211,7 +211,7 @@ string Send_Post(const string& url, const string& payload, const string& headers
 
         if (res != CURLE_OK) {
             lock_guard<mutex> guard(mtx);
-            msg("WingMan Error: Failed to send POST request. CURL error: %s\n", curl_easy_strerror(res));
+            msg("[WingMan] Error: Failed to send POST request. CURL error: %s\n", curl_easy_strerror(res));
         }
         else {
             lock_guard<mutex> guard(mtx);
@@ -222,7 +222,7 @@ string Send_Post(const string& url, const string& payload, const string& headers
     }
     else {
         lock_guard<mutex> guard(mtx);
-        msg("WingMan Error: Failed to initialize CURL.\n");
+        msg("[WingMan] Error: Failed to initialize CURL.\n");
     }
 
     return readBuffer;
@@ -231,7 +231,7 @@ string Send_Post(const string& url, const string& payload, const string& headers
 void Process_Request(const string& url, const string& payload, const string& headers) {
     string response_json = Send_Post(url, payload, headers);
     lock_guard<mutex> guard(mtx);
-    msg("\n------------------------------------------------------------------\nWingMan  Response:\n------------------------------------------------------------------\n%s\n\n", Extract_Content(response_json).c_str());
+    msg("\n------------------------------------------------------------------\n[WingMan]  Response:\n------------------------------------------------------------------\n%s\n\n", Extract_Content(response_json).c_str());
 }
 
 struct plugin_ctx_t : public plugmod_t {
@@ -241,7 +241,7 @@ struct plugin_ctx_t : public plugmod_t {
         if (!g_wsaInitialized) {
             WSADATA wsaData;
             if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-                msg("WingMan Error: WSAStartup failed\n");
+                msg("[WingMan] Error: WSAStartup failed\n");
                 return;
             }
             g_wsaInitialized = true;
@@ -264,23 +264,23 @@ struct plugin_ctx_t : public plugmod_t {
     }
 
     bool idaapi run(size_t) override {
-        msg("WingMan Loading configuration...\n");
+        msg("[WingMan] Loading configuration...\n");
 
         Document settings = Read_SettingJson();
         if (settings.IsNull()) {
-            msg("WingMan Error: Configuration loading failed.\n");
+            msg("[WingMan] Error: Configuration loading failed.\n");
             return false;
         }
 
         string url = Get_BaseURL(settings);
         if (url.empty()) {
-            msg("WingMan Error: Failed to get Base URL from configuration.\n");
+            msg("[WingMan] Error: Failed to get Base URL from configuration.\n");
             return false;
         }
 
         string headers = Get_Headers(settings);
         if (headers.empty()) {
-            msg("WingMan Error: Failed to get Headers from configuration.\n");
+            msg("[WingMan] Error: Failed to get Headers from configuration.\n");
             return false;
         }
 
@@ -297,7 +297,7 @@ struct plugin_ctx_t : public plugmod_t {
             }
 
             if (disasm_code.empty()) {
-                msg("WingMan Error: No code selected.\n");
+                msg("[WingMan] Error: No code selected.\n");
                 return false;
             }
         }
@@ -315,7 +315,7 @@ struct plugin_ctx_t : public plugmod_t {
             request_thread.detach();
         }
         else {
-            msg("WingMan No prompt entered\n");
+            msg("[WingMan] No prompt entered\n");
         }
 
         return true;
